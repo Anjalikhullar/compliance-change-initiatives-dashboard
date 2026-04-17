@@ -5,26 +5,25 @@ class AirtableService {
     }
 
     async fetchRecords() {
-        try {
-            const response = await fetch(this.baseUrl, {
-                headers: {
-                    'Authorization': `Bearer ${CONFIG.AIRTABLE_TOKEN}`
-                }
-            });
+    try {
+        // Fetch from the generated data.json file instead of Airtable API
+        const response = await fetch(CONFIG.DATA_FILE);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-            const data = await response.json();
-            this.records = data.records;
-            
-            console.log('✅ Fetched', this.records.length, 'records from Airtable');
-            return this.records;
+        const data = await response.json();
+        this.records = data.records;
+        
+        console.log('✅ Fetched', this.records.length, 'records from data file');
+        return this.records;
 
-        } catch (error) {
-            console.error('❌ Error fetching Airtable data:', error);
-            throw error;
+    } catch (error) {
+        console.error('❌ Error fetching data:', error);
+        throw error;
+    }
+}
         }
     }
 
