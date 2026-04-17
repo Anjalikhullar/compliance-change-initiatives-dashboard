@@ -1,0 +1,29 @@
+name: Fetch Airtable Data
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Run every 30 minutes
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    branches: [ main ]
+
+jobs:
+  fetch-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch data from Airtable
+        run: |
+          curl -H "Authorization: Bearer ${{ secrets.AIRTABLE_TOKEN }}" \
+            "https://api.airtable.com/v0/appfmmEsdda8cIfyy/tbl3DZrf4jk5UnqgS" \
+            -o data.json
+
+      - name: Commit and push data
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update Airtable data"
+          git push
