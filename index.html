@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Change Initiatives Dashboard</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>🎯 Compliance Change Initiatives Dashboard</h1>
+            <div class="last-updated">
+                Last Updated: <span id="lastUpdated">Loading...</span>
+                <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <section class="kpi-section">
+            <div class="kpi-card">
+                <div class="kpi-value" id="totalInitiatives">-</div>
+                <div class="kpi-label">Total Initiatives</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="activeInitiatives">-</div>
+                <div class="kpi-label">Active</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="completedInitiatives">-</div>
+                <div class="kpi-label">Completed</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="onHoldInitiatives">-</div>
+                <div class="kpi-label">On Hold</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="avgProgress">-</div>
+                <div class="kpi-label">Avg Progress</div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <h2>Initiatives by Status</h2>
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Initiatives by Priority</h2>
+                <canvas id="priorityChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>PM Effort Distribution</h2>
+                <canvas id="effortChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Category Breakdown</h2>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Timeline Section -->
+        <section class="timeline-section">
+            <h2>📅 Initiative Timeline</h2>
+            <div id="timelineContainer" class="timeline-container">
+                Loading timeline...
+            </div>
+        </section>
+
+        <!-- Detailed Table -->
+        <section class="table-section">
+            <h2>📊 All Initiatives</h2>
+            <div class="table-controls">
+                <input type="text" id="searchInput" placeholder="🔍 Search initiatives..." class="search-input">
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="Planning">Planning</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+                <select id="priorityFilter" class="filter-select">
+                    <option value="">All Priorities</option>
+                    <option value="P0">P0</option>
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                    <option value="P3">P3</option>
+                </select>
+            </div>
+            <div class="table-wrapper">
+                <table id="initiativesTable">
+                    <thead>
+                        <tr>
+                            <th>Initiative Name</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Category</th>
+                            <th>DRI</th>
+                            <th>PM Effort</th>
+                            <th>Start Date</th>
+                            <th>Target Date</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="9">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <p>Data Source: Airtable | Auto-refreshes every 30 minutes</p>
+        </footer>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/airtable.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
