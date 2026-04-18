@@ -2,127 +2,1202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compliance Change Initiatives Dashboard</title>
-    <link rel="stylesheet" href="css/dashboard.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Compliance Operations Change Initiatives Dashboard</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#1c2233;color:#ffffff}
+    .dashboard{max-width:1440px;margin:0 auto;padding:24px}
+
+    /* HEADER */
+    .header{background:#252d40;border:1px solid #2d3650;color:#fff;padding:32px 36px;border-radius:14px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #00c853}
+    .header-left h1{font-size:24px;font-weight:700;letter-spacing:.3px;color:#00c853}
+    .header-left p{opacity:.6;font-size:12px;margin-top:6px;color:#b8cce4}
+    .live-badge{background:rgba(0,200,83,.15);border:1px solid rgba(0,200,83,.4);color:#00c853;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+    .live-dot{width:7px;height:7px;background:#00c853;border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .last-updated{font-size:11px;opacity:.4;margin-top:5px;text-align:right;color:#b8cce4}
+
+    /* METRIC CARDS */
+    .metrics-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:20px}
+    .metric-card{background:#252d40;padding:22px 20px;border-radius:12px;border:1px solid #2d3650;border-left:4px solid transparent;cursor:pointer;transition:transform .15s,box-shadow .15s;text-decoration:none;display:block}
+    .metric-card:hover{transform:translateY(-3px);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+    .metric-card.total{border-left-color:#3b82f6;background:#1a2233}
+    .metric-card.not-started-c{border-left-color:#8a9ab8;background:#1f2640}
+    .metric-card.on-track-c{border-left-color:#00c853;background:#0d2016}
+    .metric-card.at-risk-c{border-left-color:#f59e0b;background:#241800}
+    .metric-card.off-track-c{border-left-color:#ef4444;background:#2d0a0a}
+    .metric-card.total .value{color:#3b82f6}
+    .metric-card.not-started-c .value{color:#b0c4de}
+    .metric-card.on-track-c .value{color:#00c853}
+    .metric-card.at-risk-c .value{color:#f59e0b}
+    .metric-card.off-track-c .value{color:#ef4444}
+    .metric-card .value{font-size:40px;font-weight:700;line-height:1}
+    .metric-card .label{font-size:12px;color:#8a9ab8;text-transform:uppercase;letter-spacing:.5px;margin-top:6px;font-weight:600}
+    .metric-card .sublabel{font-size:11px;color:#8090b0;margin-top:3px}
+    .metric-card .click-hint{font-size:10px;color:#7080a0;margin-top:6px}
+
+    /* SECTION */
+    .section{background:#252d40;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #2d3650}
+    .section-title{font-size:16px;font-weight:700;color:#00c853;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+    .section-sub{font-size:12px;color:#9aaccc;font-weight:400;margin-left:auto}
+
+    /* GRID */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+    .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px}
+
+    /* VOLUME TILES */
+    .vol-tiles{display:flex;gap:14px;margin-bottom:18px}
+    .vol-tile{border-radius:10px;padding:16px 20px;flex:1;text-align:center;border:1px solid #2d3650}
+    .vol-tile .vt-num{font-size:30px;font-weight:700}
+    .vol-tile .vt-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;font-weight:600}
+    .vol-tile.impact{background:#2d0a0a;color:#f87171}
+    .vol-tile.tbd{background:#241800;color:#fb923c}
+    .vol-tile.note{background:#1e1e2e;color:#818cf8}
+
+    /* TABLES */
+    .tbl-scroll{max-height:320px;overflow-y:auto;border:1px solid #2d3650;border-radius:8px}
+    .tbl-scroll::-webkit-scrollbar{width:6px}.tbl-scroll::-webkit-scrollbar-track{background:#1c2233}.tbl-scroll::-webkit-scrollbar-thumb{background:#3a4560;border-radius:3px}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:10px 12px;background:#1c2233;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#8090b0;font-weight:700;border-bottom:1px solid #2d3650;white-space:nowrap;position:sticky;top:0;z-index:1}
+    td{padding:10px 12px;border-bottom:1px solid #2a2a2a;font-size:13px;vertical-align:middle;color:#f0f4ff}
+    tr:hover td{background:#2c3450}
+    .group-row td{background:#1f2640;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#8090b0;padding:7px 12px;border-bottom:1px solid #2d3650}
+
+    /* BADGES */
+    .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;white-space:nowrap}
+    .badge.on-track{background:#052e16;color:#00c853;border:1px solid rgba(0,200,83,.2)}
+    .badge.off-track{background:#450a0a;color:#f87171;border:1px solid rgba(248,113,113,.2)}
+    .badge.at-risk{background:#431407;color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+    .badge.not-started{background:#1e2030;color:#818cf8;border:1px solid rgba(129,140,248,.2)}
+    .badge.completed{background:#0c2a4a;color:#60a5fa;border:1px solid rgba(96,165,250,.2)}
+
+    .pillar-badge{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap}
+    .pb-triage{background:#2d1b47;color:#c084fc}
+    .pb-sar{background:#3b0a0a;color:#f87171}
+    .pb-crosscutting{background:#0c2540;color:#60a5fa}
+    .pb-sanctions{background:#2d1a00;color:#fb923c}
+    .pb-kyc{background:#052e16;color:#00c853}
+    .pb-afterpay{background:#0c1e3a;color:#60a5fa}
+    .pb-apcp{background:#1e0a40;color:#a78bfa}
+    .pb-clearpay{background:#3b0a20;color:#f472b6}
+
+    /* LEVER ACCORDION */
+    .lever-block{border:1px solid #2d3650;border-radius:10px;margin-bottom:10px;overflow:hidden}
+    .lever-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;cursor:pointer;background:#1f2640;transition:background .15s}
+    .lever-header:hover{background:#283248}
+    .lever-left{display:flex;align-items:center;gap:12px}
+    .lever-title{font-weight:700;font-size:14px;color:#ffffff}
+    .lever-sub{font-size:11px;color:#9aaccc;margin-top:2px}
+    .lever-chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .lchip{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+    .lchip.vol{background:#3b0a0a;color:#f87171}
+    .lchip.aht{background:#2d1a00;color:#fb923c}
+    .lchip.res{background:#1e0a40;color:#a78bfa}
+    .lchip.ok{background:#052e16;color:#00c853}
+    .lchip.warn{background:#450a0a;color:#f87171}
+    .lever-arrow{font-size:16px;color:#8090b0;transition:transform .2s;margin-left:12px}
+    .lever-body{display:none;padding:0 0 8px;background:#1c2233}
+
+    /* PHASE BARS */
+    .phase-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+    .phase-label{font-size:12px;color:#b0c4de;width:190px;flex-shrink:0;text-align:right}
+    .phase-num{font-size:12px;font-weight:700;width:24px;text-align:right;flex-shrink:0}
+    .phase-track{flex:1;background:#1f2640;border-radius:5px;height:18px;overflow:hidden}
+    .phase-fill{height:100%;border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;font-size:10px;font-weight:700;color:#fff;min-width:18px}
+
+    /* DRI GRID */
+    .dri-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .dri-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #2d3650;border-radius:8px;cursor:pointer;transition:background .15s;background:#1f2640}
+    .dri-card:hover{background:#283248;border-color:#3a4560}
+    .dri-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+    .dri-name{font-size:13px;font-weight:600;color:#ffffff}
+    .dri-count{font-size:11px;color:#9aaccc;margin-top:2px}
+
+    /* DONUT */
+    .donut-wrap{display:flex;align-items:center;justify-content:center;gap:28px}
+    .donut{width:140px;height:140px;border-radius:50%;background:conic-gradient(#00c853 0deg 212.0deg,#ef4444 212.0deg 292.0deg,#6b7280 292.0deg 348.0deg,#f59e0b 348.0deg 356.0deg,#3b82f6 356.0deg 360.0deg);position:relative;flex-shrink:0}
+    .donut::before{content:'';position:absolute;width:90px;height:90px;background:#252d40;border-radius:50%;top:25px;left:25px}
+    .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+    .donut-center .dn{font-size:26px;font-weight:700;color:#ffffff}
+    .donut-center .dt{font-size:9px;color:#8090b0;text-transform:uppercase}
+    .legend{display:flex;flex-direction:column;gap:7px}
+    .legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#f0f4ff}
+    .legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+    .status-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-top:16px}
+
+    /* PILLAR GRID */
+    .pillar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .pillar-card{border:1px solid #2d3650;border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:all .15s;background:#1f2640}
+    .pillar-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.5);transform:translateY(-1px);border-color:#3a4560}
+    .pillar-card .p-name{font-weight:600;font-size:13px;color:#ffffff}
+    .pillar-card .p-sub{font-size:10px;color:#8090b0;margin-top:2px}
+    .pillar-card .p-num{font-size:26px;font-weight:700}
+
+    /* EFFECTIVENESS */
+    .eff-status-group{margin-bottom:14px}
+    .eff-group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:6px 12px;border-radius:6px;margin-bottom:8px;display:inline-block}
+    .eff-group-label.ot{background:#052e16;color:#00c853}
+    .eff-group-label.ar{background:#431407;color:#fbbf24}
+    .eff-group-label.of{background:#450a0a;color:#f87171}
+    .eff-tbd-tile{background:#1a2233;border:1px dashed #2a3a55;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:16px}
+    .eff-tbd-tile .et-num{font-size:28px;font-weight:700;color:#60a5fa}
+    .eff-tbd-tile .et-label{font-size:12px;color:#60a5fa;font-weight:600}
+    .eff-tbd-tile .et-sub{font-size:11px;color:#7080a0;margin-top:2px}
+
+    /* FILTER BAR */
+    .filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+    .filter-bar select,.filter-bar input{padding:7px 11px;border:1px solid #2d3650;border-radius:8px;font-size:13px;background:#1f2640;color:#ffffff;outline:none;transition:border-color .2s}
+    .filter-bar select:focus,.filter-bar input:focus{border-color:#00c853}
+    .filter-bar select option{background:#1f2640;color:#ffffff}
+    .filter-count{font-size:12px;color:#9aaccc;margin-left:auto}
+    .btn-clear{padding:7px 13px;border:1px solid #2d3650;border-radius:8px;background:#1f2640;cursor:pointer;font-size:12px;color:#b8cce4;transition:all .15s}
+    .btn-clear:hover{background:#283248;color:#ffffff;border-color:#8090b0}
+
+    /* UPCOMING */
+    .upcoming-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .upcoming-card{border:1px solid #2d3650;border-radius:10px;padding:15px;border-left:4px solid #00c853;background:#1f2640}
+    .upcoming-date{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .upcoming-name{font-weight:600;font-size:13px;margin-top:4px;color:#ffffff}
+    .upcoming-meta{font-size:11px;color:#8090b0;margin-top:5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    /* FOOTER */
+    .footer{text-align:center;padding:20px;color:#7080a0;font-size:12px}
+
+    /* DRI MISSING SECTION */
+    .dri-miss-card{border:1px solid #2d3650;border-radius:10px;margin-bottom:10px;overflow:hidden}
+    .dri-miss-hdr{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#1f2640;cursor:pointer;transition:background .15s}
+    .dri-miss-hdr:hover{background:#283248}
+    .dri-miss-body{display:none;padding:4px 0 10px;background:#1c2233}
+    .miss-row{display:flex;align-items:flex-start;gap:10px;padding:9px 18px;border-bottom:1px solid #212940}
+    .miss-row:last-child{border-bottom:none}
+    .miss-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+    .mchip{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;white-space:nowrap}
+    .mchip.vol{background:#2d1a00;color:#fb923c}
+    .mchip.aht{background:#1e0a40;color:#a78bfa}
+    .mchip.date{background:#0c2540;color:#60a5fa}
+    .dri-miss-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+    .dri-miss-count{display:inline-flex;align-items:center;justify-content:center;background:#2d1a00;color:#fb923c;border:1px solid rgba(251,146,60,.3);border-radius:12px;font-size:11px;font-weight:700;padding:2px 9px;margin-left:auto;white-space:nowrap}
+
+    .initiative-name{font-weight:600;color:#ffffff;max-width:260px;line-height:1.3}
+
+    @media(max-width:900px){.metrics-row{grid-template-columns:repeat(2,1fr)}.two-col,.three-col{grid-template-columns:1fr}.pillar-grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header class="dashboard-header">
-            <h1>🎯 Compliance Change Initiatives Dashboard</h1>
-            <div class="last-updated">
-                Last Updated: <span id="lastUpdated">Loading...</span>
-                <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
-            </div>
-        </header>
+<div class="dashboard">
 
-        <!-- KPI Cards -->
-        <section class="kpi-section">
-            <div class="kpi-card">
-                <div class="kpi-value" id="totalInitiatives">-</div>
-                <div class="kpi-label">Total Initiatives</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="activeInitiatives">-</div>
-                <div class="kpi-label">Active</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="completedInitiatives">-</div>
-                <div class="kpi-label">Completed</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="onHoldInitiatives">-</div>
-                <div class="kpi-label">On Hold</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="avgProgress">-</div>
-                <div class="kpi-label">Avg Progress</div>
-            </div>
-        </section>
-
-        <!-- Charts Section -->
-        <section class="charts-section">
-            <div class="chart-container">
-                <h2>Initiatives by Status</h2>
-                <canvas id="statusChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h2>Initiatives by Priority</h2>
-                <canvas id="priorityChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h2>PM Effort Distribution</h2>
-                <canvas id="effortChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h2>Category Breakdown</h2>
-                <canvas id="categoryChart"></canvas>
-            </div>
-        </section>
-
-        <!-- Timeline Section -->
-        <section class="timeline-section">
-            <h2>📅 Initiative Timeline</h2>
-            <div id="timelineContainer" class="timeline-container">
-                Loading timeline...
-            </div>
-        </section>
-
-        <!-- Detailed Table -->
-        <section class="table-section">
-            <h2>📊 All Initiatives</h2>
-            <div class="table-controls">
-                <input type="text" id="searchInput" placeholder="🔍 Search initiatives..." class="search-input">
-                <select id="statusFilter" class="filter-select">
-                    <option value="">All Statuses</option>
-                    <option value="Planning">Planning</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                </select>
-                <select id="priorityFilter" class="filter-select">
-                    <option value="">All Priorities</option>
-                    <option value="P0">P0</option>
-                    <option value="P1">P1</option>
-                    <option value="P2">P2</option>
-                    <option value="P3">P3</option>
-                </select>
-            </div>
-            <div class="table-wrapper">
-                <table id="initiativesTable">
-                    <thead>
-                        <tr>
-                            <th>Initiative Name</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Category</th>
-                            <th>DRI</th>
-                            <th>PM Effort</th>
-                            <th>Start Date</th>
-                            <th>Target Date</th>
-                            <th>Progress</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr><td colspan="9">Loading data...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer class="dashboard-footer">
-            <p>Data Source: Airtable | Auto-refreshes every 30 minutes</p>
-        </footer>
+  <!-- ░░ HEADER ░░ -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Compliance Operations Change Initiatives Dashboard</h1>
+      <p>Leadership &amp; Stakeholder View · DRI: Anjali Khullar</p>
     </div>
+    <div style="text-align:right">
+      <div class="live-badge"><span class="live-dot"></span>Live · Airtable</div>
+      <div class="last-updated">Last synced: April 17, 2026</div>
+    </div>
+  </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/airtable.js"></script>
-    <script src="js/charts.js"></script>
-    <script src="js/main.js"></script>
+  <!-- ░░ GLOBAL SEARCH BAR ░░ -->
+  <div style="background:#252d40;border:1px solid #2d3650;border-radius:12px;padding:16px 22px;margin-bottom:20px;display:flex;align-items:center;gap:14px">
+    <span style="font-size:20px;flex-shrink:0;opacity:.6">🔍</span>
+    <input
+      id="topSearch"
+      type="text"
+      placeholder="Search initiatives by name or DRI — fuzzy matching, typos welcome (e.g. 'gamblin', 'autpoulate', 'rtb traf')"
+      oninput="syncTopSearch()"
+      style="flex:1;border:1.5px solid #333;border-radius:8px;padding:11px 16px;font-size:14px;color:#ffffff;outline:none;transition:border-color .2s,background .2s;background:#1f2640"
+      onfocus="this.style.borderColor='#00c853';this.style.background='#1a2216'"
+      onblur="this.style.borderColor=this.value?'#00c853':'#333';this.style.background=this.value?'#1a2216':'#1e1e1e'"
+    >
+    <button onclick="clearTopSearch()" id="topClearBtn" style="display:none;padding:9px 16px;border:1px solid #2d3650;border-radius:8px;background:#1f2640;cursor:pointer;font-size:13px;color:#b0c4de;white-space:nowrap;transition:all .15s" onmouseover="this.style.background='#2a2a2a';this.style.color='#e2e8f0'" onmouseout="this.style.background='#1e1e1e';this.style.color='#9ca3af'">✕ Clear</button>
+    <span id="topSearchHint" style="font-size:12px;color:#7080a0;white-space:nowrap;flex-shrink:0">↓ Results in All Initiatives</span>
+  </div>
+
+  <!-- ░░ TOP-LEVEL METRICS (clickable) ░░ -->
+  <div class="metrics-row">
+    <div class="metric-card total" onclick="clearFilters()">
+      <div class="value">90</div>
+      <div class="label">Total Initiatives</div>
+      <div class="sublabel">Across 8 program pillars</div>
+      <div class="click-hint">↓ View all</div>
+    </div>
+    <div class="metric-card not-started-c" onclick="filterTo('Not Started')">
+      <div class="value">13</div>
+      <div class="label">Not Started</div>
+      <div class="sublabel">14% of portfolio</div>
+      <div class="click-hint">↓ View detail</div>
+    </div>
+    <div class="metric-card on-track-c" onclick="filterTo('On Track')">
+      <div class="value">53</div>
+      <div class="label">On Track</div>
+      <div class="sublabel">59% of portfolio</div>
+      <div class="click-hint">↓ View detail</div>
+    </div>
+    <div class="metric-card at-risk-c" onclick="filterTo('At Risk')">
+      <div class="value">2</div>
+      <div class="label">At Risk</div>
+      <div class="sublabel">Monitor closely</div>
+      <div class="click-hint">↓ View detail</div>
+    </div>
+    <div class="metric-card off-track-c" onclick="filterTo('Off track')">
+      <div class="value">20</div>
+      <div class="label">Off Track</div>
+      <div class="sublabel">Needs attention</div>
+      <div class="click-hint">↓ View detail</div>
+    </div>
+  </div>
+
+  <!-- ░░ PORTFOLIO HEALTH + PILLAR BREAKDOWN ░░ -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title">🎯 Portfolio Health</div>
+      <div class="donut-wrap">
+        <div class="donut"><div class="donut-center"><div class="dn">90</div><div class="dt">Total</div></div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>On Track: 53 (59%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>Off Track: 20 (22%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#95a5a6"></div>Not Started: 13 (14%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>At Risk: 2 (2%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>Completed: 1 (1%)</div>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div style="width:59%;background:#27ae60"></div>
+        <div style="width:22%;background:#e74c3c"></div>
+        <div style="width:15%;background:#95a5a6"></div>
+        <div style="width:2%;background:#f39c12"></div>
+        <div style="width:1%;background:#3498db"></div>
+      </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">📁 Program Pillar Breakdown</div>
+      <div class="pillar-grid">
+        <div class="pillar-card" style="border-left:5px solid #6c3483" onclick="filterByPillar('Triage')"><div><div class="p-name">Triage</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#6c3483">23</div></div>
+        <div class="pillar-card" style="border-left:5px solid #c0392b" onclick="filterByPillar('SAR')"><div><div class="p-name">SAR</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#c0392b">19</div></div>
+        <div class="pillar-card" style="border-left:5px solid #2874a6" onclick="filterByPillar('Cross Cutting')"><div><div class="p-name">Cross Cutting</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#2874a6">22</div></div>
+        <div class="pillar-card" style="border-left:5px solid #d35400" onclick="filterByPillar('Sanctions')"><div><div class="p-name">Sanctions</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#d35400">9</div></div>
+        <div class="pillar-card" style="border-left:5px solid #117a65" onclick="filterByPillar('KYC')"><div><div class="p-name">KYC</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#117a65">6</div></div>
+        <div class="pillar-card" style="border-left:5px solid #0d6efd" onclick="filterByPillar('AfterPay')"><div><div class="p-name">AfterPay</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#0d6efd">4</div></div>
+        <div class="pillar-card" style="border-left:5px solid #6610f2" onclick="filterByPillar('AP/CP')"><div><div class="p-name">AP / CP</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#6610f2">4</div></div>
+        <div class="pillar-card" style="border-left:5px solid #e91e8c" onclick="filterByPillar('ClearPay')"><div><div class="p-name">ClearPay</div><div class="p-sub">Click to filter</div></div><div class="p-num" style="color:#e91e8c">2</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░ VOLUME IMPACT OVERVIEW ░░ -->
+  <div class="section">
+    <div class="section-title">📊 Volume Impact Overview
+      <span class="section-sub">Initiatives with "No Volume Impact" excluded from volume views</span>
+    </div>
+    <div class="vol-tiles">
+      <div class="vol-tile impact">
+        <div class="vt-num" id="volWithImpact">—</div>
+        <div class="vt-label">With Volume Impact</div>
+      </div>
+      <div class="vol-tile tbd">
+        <div class="vt-num" id="volTBD">—</div>
+        <div class="vt-label">Volume Data TBD / Missing</div>
+      </div>
+      <div class="vol-tile" style="background:#e8f5e9;color:#117a65">
+        <div class="vt-num" id="volIncreasing">—</div>
+        <div class="vt-label">Volume Increasing</div>
+      </div>
+      <div class="vol-tile" style="background:#d4edda;color:#155724">
+        <div class="vt-num" id="volDecreasing">—</div>
+        <div class="vt-label">Volume Decreasing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░ VOLUME INCREASING VIEW ░░ -->
+  <div class="section">
+    <div class="section-title">📈 Volume Increasing Initiatives
+      <span class="section-sub">On Track first · sorted by implementation date</span>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Initiative</th><th>Pillar</th><th>Status</th><th>DRI</th><th>Volume</th><th>Impl. Date</th></tr></thead>
+        <tbody id="volIncBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ░░ EFFECTIVENESS INITIATIVES ░░ -->
+  <div class="section">
+    <div class="section-title">✅ Effectiveness Initiatives
+      <span class="section-sub">Initiatives that reduce volume and / or AHT · On Track → At Risk → Off Track</span>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+      <div class="eff-tbd-tile" style="flex:0 0 auto;min-width:200px;cursor:pointer;transition:box-shadow .15s,transform .15s" onclick="filterEffectivenessTBD()" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.12)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
+        <div class="et-num" id="effTBDCount">—</div>
+        <div>
+          <div class="et-label">Effectiveness TBD</div>
+          <div class="et-sub">Volume / AHT impact unclear</div>
+          <div style="font-size:10px;color:#8aafc8;margin-top:5px;font-weight:600">↓ Click to view initiatives</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex:1;min-width:200px">
+        <div style="background:#052e16;border:1px solid rgba(0,200,83,.15);border-radius:8px;padding:12px 18px;flex:1;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#00c853" id="effVolCount">—</div>
+          <div style="font-size:11px;color:#8090b0;text-transform:uppercase;margin-top:3px">Volume Reducing</div>
+        </div>
+        <div style="background:#0c1e3a;border:1px solid rgba(96,165,250,.15);border-radius:8px;padding:12px 18px;flex:1;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#60a5fa" id="effAHTCount">—</div>
+          <div style="font-size:11px;color:#8090b0;text-transform:uppercase;margin-top:3px">AHT Reducing</div>
+        </div>
+      </div>
+    </div>
+    <div class="two-col" style="margin-bottom:0">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#00c853;margin-bottom:10px;padding:8px 12px;background:#052e16;border-radius:8px;display:flex;align-items:center;gap:6px;border:1px solid rgba(0,200,83,.15)">📉 Volume Reducing</div>
+        <div class="tbl-scroll" style="max-height:280px">
+          <table>
+            <thead><tr><th>Initiative</th><th>Pillar</th><th>Status</th><th>Volume</th><th>DRI</th></tr></thead>
+            <tbody id="effVolBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:10px;padding:8px 12px;background:#0c1e3a;border-radius:8px;display:flex;align-items:center;gap:6px;border:1px solid rgba(96,165,250,.15)">⏱ AHT Reducing</div>
+        <div class="tbl-scroll" style="max-height:280px">
+          <table>
+            <thead><tr><th>Initiative</th><th>Pillar</th><th>Status</th><th>AHT Saving</th><th>DRI</th></tr></thead>
+            <tbody id="effAHTBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░ CHANGE LEVERS — OPS IMPACT ROLLUP ░░ -->
+  <div class="section">
+    <div class="section-title">🔧 Change Levers — Operational Impact Rollup</div>
+    <p style="font-size:12px;color:#999;margin-bottom:10px">Click a lever to expand and see all initiatives under it. Each lever shows counts of initiatives with volume impact, AHT (Average Handle Time) impact, and their on-track status.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-size:11px">
+      <span style="display:flex;align-items:center;gap:5px"><span class="lchip vol" style="padding:2px 8px">Vol Impact: N</span> = initiatives adding/reducing case volume</span>
+      <span style="display:flex;align-items:center;gap:5px"><span class="lchip aht" style="padding:2px 8px">AHT Increasing: N</span> = initiatives increasing handle time per case</span>
+      <span style="display:flex;align-items:center;gap:5px"><span class="lchip" style="background:#d4edda;color:#155724;padding:2px 8px">AHT Decreasing: N</span> = initiatives reducing handle time</span>
+      <span style="display:flex;align-items:center;gap:5px"><span class="lchip ok" style="padding:2px 8px">On Track: N</span> / <span class="lchip warn" style="padding:2px 8px">Off Track / At Risk: N</span></span>
+    </div>
+    <div id="leverAccordion"></div>
+  </div>
+
+  <!-- ░░ PHASE + DRI ░░ -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title">🔄 Phase Distribution</div>
+      <div id="phaseChart"></div>
+    </div>
+    <div class="section">
+      <div class="section-title">👤 DRI Ownership</div>
+      <div class="dri-grid" id="driGrid"></div>
+    </div>
+  </div>
+
+  <!-- ░░ UPCOMING IMPLEMENTATIONS ░░ -->
+  <div class="section">
+    <div class="section-title">📅 Upcoming Implementations</div>
+    <div class="upcoming-grid" id="upcomingGrid"></div>
+  </div>
+
+  <!-- ░░ ALL INITIATIVES TABLE ░░ -->
+  <div class="section" id="allInitiativesSection">
+    <div class="section-title">📋 All Initiatives</div>
+    <div id="activeBanner" style="display:none;background:#241800;border:1px solid #d97706;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:13px;color:#fbbf24;display:none;align-items:center;gap:10px">
+      <span id="activeBannerText"></span>
+      <button onclick="clearFilters()" style="margin-left:auto;padding:4px 12px;border:1px solid #d97706;border-radius:6px;background:#1c2233;cursor:pointer;font-size:12px;color:#fbbf24">✕ Clear filter</button>
+    </div>
+    <div class="filter-bar">
+      <span style="font-size:12px;font-weight:600;color:#b8cce4">Filter:</span>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="">All Statuses</option>
+        <option value="On Track">On Track</option>
+        <option value="Off track">Off Track</option>
+        <option value="At Risk">At Risk</option>
+        <option value="Not Started">Not Started</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <select id="filterPillar" onchange="applyFilters()">
+        <option value="">All Pillars</option>
+        <option value="Triage">Triage</option>
+        <option value="SAR">SAR</option>
+        <option value="Cross Cutting">Cross Cutting</option>
+        <option value="Sanctions">Sanctions</option>
+        <option value="KYC">KYC</option>
+        <option value="AfterPay">AfterPay</option>
+        <option value="AP/CP">AP/CP</option>
+        <option value="ClearPay">ClearPay</option>
+      </select>
+      <select id="filterDRI" onchange="applyFilters()">
+        <option value="">All DRIs</option>
+        <option>Toya Walter</option><option>Madhuri Hegde</option><option>Zander Hilmes</option>
+        <option>Katerina Lambropoulos</option><option>Sivan Fraser</option><option>Chelsea Waterson</option>
+        <option>Phil Mortillo</option><option>Alexandra Crocco</option><option>Ryan Sierra</option>
+      </select>
+      <select id="filterLever" onchange="applyFilters()">
+        <option value="">All Levers</option>
+        <option value="Policy and Procedure Refinement">Policy &amp; Procedure</option>
+        <option value="Process Re-engineering">Process Re-engineering</option>
+        <option value="Model Optimization">Model Optimization</option>
+        <option value="AI and Automation">AI &amp; Automation</option>
+        <option value="Tooling and Workflow">Tooling &amp; Workflow</option>
+      </select>
+      <select id="filterPhase" onchange="applyFilters()">
+        <option value="">All Phases</option>
+        <option>Not Started</option><option>Initial Assessment</option>
+        <option>Approvals Pending</option><option>Awaiting Guidance from Program</option>
+        <option>Development</option><option>WFM Planning</option>
+        <option>Eng Resourcing</option><option>Completed</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="🔍 Search by name or DRI (fuzzy)" oninput="applyFilters()" style="min-width:220px;transition:border-color .2s,background .2s">
+      <button class="btn-clear" onclick="clearFilters()">Clear</button>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+    <div class="tbl-scroll" style="max-height:500px">
+      <table>
+        <thead>
+          <tr>
+            <th>Initiative</th><th>Pillar</th><th>Status</th><th>Phase</th>
+            <th>Lever</th><th>DRI</th><th>Vol Impact</th><th>Volume</th><th>AHT</th><th>Impl. Date</th>
+          </tr>
+        </thead>
+        <tbody id="initiativesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ░░ DRI ACTION REQUIRED ░░ -->
+  <div class="section" id="driMissingSection" style="border-left:4px solid #f59e0b">
+    <div class="section-title" style="color:#f59e0b">⚠ DRI Action Required — Missing &amp; TBD Fields
+      <span class="section-sub" id="driMissingSubtitle"></span>
+    </div>
+    <p style="font-size:12px;color:#9aaccc;margin-bottom:16px;line-height:1.6">Initiatives where <strong style="color:#f0f4ff">Volume</strong>, <strong style="color:#f0f4ff">AHT</strong>, or <strong style="color:#f0f4ff">Implementation Date</strong> are missing or TBD. Share with each DRI so they can complete outstanding fields directly in Airtable.</p>
+    <div id="driMissingGrid"></div>
+  </div>
+
+  <div class="footer">Dashboard Owner: Anjali Khullar · DRI, Compliance Operations Governance &amp; Change Initiatives · Source: Airtable · April 14, 2026</div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+// direction: "increasing" | "decreasing" | "tbd" | "none"
+// effectiveness: true = reduces volume and/or AHT
+const initiatives = [
+  {name:"CBD Program Deprecation",pillar:"KYC",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Chelsea Waterson",volume:"-1,000 cases/month",volumeImpact:"Yes",direction:"decreasing",aht:"Decrease",effectiveness:true,date:""},
+  {name:"Image Repository Requirements",pillar:"Cross Cutting",status:"Off track",phase:"Eng Resourcing",lever:"Tooling and Workflow",dri:"Alexandra Crocco",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"In-App Messaging/IRF",pillar:"Sanctions",status:"Off track",phase:"Eng Resourcing",lever:"Process Re-engineering",dri:"Zander Hilmes",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:""},
+  {name:"Create CAP monitoring procedures",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Madhuri Hegde",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Immaterial change to SAR Filing DIM",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-03-31"},
+  {name:"Gambling: Initiator notes",pillar:"Triage",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Madhuri Hegde",volume:"UUP ---> 300 cases/week 936 cases/month",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Update UK KYC SOP (New Section) & EEA KYC Procedures (BO Guidance)",pillar:"KYC",status:"Off track",phase:"Awaiting Guidance from Program",lever:"Policy and Procedure Refinement",dri:"Chelsea Waterson",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Kalshi Gambling Activity on Cash App Pay & Cash Card",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Replace ECDD email with Google Form and Notary Integration",pillar:"AfterPay",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Katerina Lambropoulos",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-06-03"},
+  {name:"SQ Code Red: optimize customer exit criteria across priority areas to drive sustainable growth",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"SQ TM & UUP - SSP Policy alignment, System update and SLA Update",pillar:"Triage",status:"Off track",phase:"Awaiting Guidance from Program",lever:"Policy and Procedure Refinement",dri:"Andrew kane",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"NSAR Fincen Guidance Ops impact assessment",pillar:"SAR",status:"Off track",phase:"Awaiting Guidance from Program",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:""},
+  {name:"Blind Review Feedback Loop & Escalation Framework",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Gambling M2O Model Launch",pillar:"SAR",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Toya Walter",volume:"1000-1500 UUP cases and 970-1455 SAR cases",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"AU SMR XML",pillar:"SAR",status:"Off track",phase:"Eng Resourcing",lever:"Tooling and Workflow",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:""},
+  {name:"Screening Configuration Updates",pillar:"Sanctions",status:"At Risk",phase:"WFM Planning",lever:"Policy and Procedure Refinement",dri:"Zander Hilmes",volume:"Increase but no assessment yet",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Investigate Backlogged & Closed CF1 Cases",pillar:"Sanctions",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Zander Hilmes",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"SLA Alignment - UARs (all regions)",pillar:"AP/CP",status:"On Track",phase:"Development",lever:"Policy and Procedure Refinement",dri:"Katerina Lambropoulos",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-30"},
+  {name:"Autopopulate SAR form Selections",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Tooling and Workflow",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"Decrease",effectiveness:true,date:"2026-06-30"},
+  {name:"Adverse media logic update due to duplicated alerts",pillar:"KYC",status:"On Track",phase:"Development",lever:"Model Optimization",dri:"Chelsea Waterson",volume:"-80%",volumeImpact:"Yes",direction:"decreasing",aht:"NA",effectiveness:true,date:""},
+  {name:"Double blind review pilot",pillar:"Triage",status:"Off track",phase:"WFM Planning",lever:"Process Re-engineering",dri:"Ryan Sierra",volume:"5% increase of {{compl_cash_us_tm_cash_for_teens}} queue.",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Update KYC Documentation for New Dissolved & Liquidated Deactivation Reasons",pillar:"KYC",status:"On Track",phase:"Prioritization",lever:"Policy and Procedure Refinement",dri:"Chelsea Waterson",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-06"},
+  {name:"Update DRAFT Financial Crimes Equities Procedure | Cash App",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-03-31"},
+  {name:"Cash TM Recurring Relationship Remediation",pillar:"Triage",status:"Off track",phase:"WFM Planning",lever:"Policy and Procedure Refinement",dri:"Phil Mortillo",volume:"2268",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Gambling Warning Program Rollout",pillar:"Cross Cutting",status:"Completed",phase:"WFM Planning",lever:"Process Re-engineering",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Third Party & Outsourcing Framework Clearpay",pillar:"ClearPay",status:"On Track",phase:"Approvals Pending",lever:"Process Re-engineering",dri:"Rameez Siddiqi",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-30"},
+  {name:"BTC SAR Bot",pillar:"Triage",status:"On Track",phase:"Initial Assessment",lever:"AI and Automation",dri:"Alexandra Crocco",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:"2026-06-30"},
+  {name:"A2A - Process + Training for Compliance teams (Appeals, KYC, UUP, Sanctions and HRCE)",pillar:"Cross Cutting",status:"On Track",phase:"Completed",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-03-31"},
+  {name:"Cash App for Work",pillar:"Cross Cutting",status:"Not Started",phase:"Not Started",lever:"Product Launch",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-13"},
+  {name:"Trump Accounts Product Launch",pillar:"Cross Cutting",status:"Not Started",phase:"Not Started",lever:"Product Launch",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-07-03"},
+  {name:"AU Afterpay TM - Rule tuning for optimization",pillar:"AfterPay",status:"On Track",phase:"Development",lever:"Model Optimization",dri:"Katerina Lambropoulos",volume:"-1200 / monthly",volumeImpact:"Yes",direction:"decreasing",aht:"NA",effectiveness:true,date:"2026-04-06"},
+  {name:"Update to Strike program",pillar:"Triage",status:"On Track",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Subhi Sabeiha",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-16"},
+  {name:"WFP for Sanctions Threshold Change  - SQ/Cash",pillar:"Sanctions",status:"Off track",phase:"WFM Planning",lever:"Process Re-engineering",dri:"Zander Hilmes",volume:"canrw - 25% increase\neurw - 8% increase\neurw - 10% increase\njprw - 12% increase\nofac_green - 7% increase",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Operational Requirements to Remediate TM Equity-Velocity Rule's Deduplication logic",pillar:"Triage",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Madhuri Hegde",volume:"TM impact: Remediation: 229 alerts Ongoing increase in TM alert volume: less than 2%/month (6 alerts/month) SAR impact: Remediation: ~69 SAR cases Ongoing increase in the alert volume: 1-2 SAR cases/month",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Update Cash TM and SAR Procedure Warning Guidance",pillar:"Triage",status:"On Track",phase:"Approvals Pending",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-06"},
+  {name:"Request for CA Bad Actors TOS Screening Procedure",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Madhuri Hegde",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Cash KYC Notary Migration",pillar:"KYC",status:"On Track",phase:"Initial Assessment",lever:"Tooling and Workflow",dri:"Chelsea Waterson",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-18"},
+  {name:"Add Strike to SAR Decision Panel",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Tooling and Workflow",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"Decrease",effectiveness:true,date:""},
+  {name:"Standardization of HRCE Escalation Criteria Across SAR & TM",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Risk & Compliance EFE Procedural Alignment",pillar:"Cross Cutting",status:"On Track",phase:"Development",lever:"Policy and Procedure Refinement",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Global Merchant KYC/KYB Operations: Restructure Afterpay/Clearpay Functions into Block Compliance Operations",pillar:"AP/CP",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Katerina Lambropoulos",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-06-01"},
+  {name:"TM Case Note Standards",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Ryan Sierra",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-16"},
+  {name:"[DIM] Cash TM - Multiple Queues",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Ryan Sierra",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-16"},
+  {name:"RTB Paper Money Deposits Predicted ML - SAR Capacity Sampling Request - Part 2",pillar:"SAR",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Toya Walter",volume:"300",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Screening Procedure/handbook uplife/Update",pillar:"ClearPay",status:"On Track",phase:"WFM Planning",lever:"Policy and Procedure Refinement",dri:"Rameez Siddiqi",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-02"},
+  {name:"Define and Document Pilot Test Requirements and Evaluation Criteria",pillar:"Sanctions",status:"On Track",phase:"Initial Assessment",lever:"AI and Automation",dri:"Zander Hilmes",volume:"TBD",volumeImpact:"Yes",direction:"tbd",aht:"NA",effectiveness:false,date:""},
+  {name:"FTE to take on QC of BPO L2 cases",pillar:"Sanctions",status:"On Track",phase:"WFM Planning",lever:"Process Re-engineering",dri:"Zander Hilmes",volume:"TBD",volumeImpact:"Yes",direction:"tbd",aht:"TBD",effectiveness:false,date:"2026-09-30"},
+  {name:"Batch TM Money Laundering",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Model Optimization",dri:"Phil Mortillo",volume:"-17,000 TM Cases +3,400 SAR Cases",volumeImpact:"Yes",direction:"decreasing",aht:"NA",effectiveness:true,date:"2026-04-02"},
+  {name:"SCOMP L3 Migration to Notary",pillar:"Sanctions",status:"At Risk",phase:"WFM Planning",lever:"Process Re-engineering",dri:"Zander Hilmes",volume:"NA",volumeImpact:"No",direction:"none",aht:"Decrease",effectiveness:true,date:"2026-09-30"},
+  {name:"Inclusion of Sanctions into Warnings",pillar:"Sanctions",status:"On Track",phase:"Eng Resourcing",lever:"AI and Automation",dri:"Zander Hilmes",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:"2026-04-30"},
+  {name:"Out of Network (OON) Paylinks",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Product Launch",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-30"},
+  {name:"SQ CA- Create Procedure for Access Management in FWR Portal",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Autopopulate IP address",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"AI and Automation",dri:"Alexandra Crocco",volume:"NA",volumeImpact:"No",direction:"none",aht:"Decrease",effectiveness:true,date:"2026-06-30"},
+  {name:"Assess procedural, DIM, and training needs to support liveness check, new image review checks for Layering queues.",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"HRCE TF Exposure Queue Escalations to SAR Sampling",pillar:"SAR",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Ryan Sierra",volume:"37 One time",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"TM Queue Reference Guide update - new BTC filtering model",pillar:"Triage",status:"On Track",phase:"Approvals Pending",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-06"},
+  {name:"Transition Trade surveillance reviews from CAI to Ops",pillar:"Triage",status:"Off track",phase:"Not Started",lever:"Process Re-engineering",dri:"Madhuri Hegde",volume:"30/ month",volumeImpact:"Yes",direction:"increasing",aht:"TBD",effectiveness:false,date:""},
+  {name:"Cash SAR OCSE TAP",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"AI and Automation",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:""},
+  {name:"Cash App Pay Merchant Compliance",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Madhuri Hegde",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Update Service Level Agreement and Backlog Management Standard",pillar:"Cross Cutting",status:"On Track",phase:"Completed",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-03-31"},
+  {name:"SQ CA TM - IA MAP Remediation: TM SLA Alignment (Canada AML)",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Madhuri Hegde",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"RTB Human Trafficking V1 Model: Allocate FTE Operations TM/SAR Resources and Sampling",pillar:"SAR",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Toya Walter",volume:"130",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Unusual Activity Referrals",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Model Optimization",dri:"Phil Mortillo",volume:"+1000 into UAR",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:"2026-05-01"},
+  {name:"Risk Drugs: Big Fish rule - Drug Trafficking",pillar:"Triage",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Toya Walter",volume:"80 cases/ Month",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"RTB Paper Money Deposits Predicted ML - SAR Capacity Sampling Request",pillar:"SAR",status:"Off track",phase:"WFM Planning",lever:"Model Optimization",dri:"Toya Walter",volume:"100",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Compliance Referrals to SQ Complaints review team standardization",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"WFP for Sanctions Threshold Change - Afterpay",pillar:"AP/CP",status:"On Track",phase:"Initial Assessment",lever:"Model Optimization",dri:"Katerina Lambropoulos",volume:"+200/ month",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Afterpay/Clearpay Satori to Notary Migration",pillar:"AP/CP",status:"On Track",phase:"Initial Assessment",lever:"Tooling and Workflow",dri:"Katerina Lambropoulos",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-06-20"},
+  {name:"SQ TM Notary Migration",pillar:"Triage",status:"On Track",phase:"Initial Assessment",lever:"Tooling and Workflow",dri:"Alexandra Crocco",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-06-01"},
+  {name:"Square Bill Pay Enhancements",pillar:"Cross Cutting",status:"Not Started",phase:"Not Started",lever:"Product Launch",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-29"},
+  {name:"Allocate Resources for Drug TAP Sampling",pillar:"SAR",status:"Off track",phase:"WFM Planning",lever:"AI and Automation",dri:"Toya Walter",volume:"500",volumeImpact:"Yes",direction:"increasing",aht:"NA",effectiveness:false,date:""},
+  {name:"Compliance Operations Documentation Process Standard",pillar:"Cross Cutting",status:"On Track",phase:"Completed",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-15"},
+  {name:"Unlock SAR \"Reason\" Box in Notary for QC/Reporting Purposes",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"AI and Automation",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"2026 AU AML/CTF Reforms",pillar:"AfterPay",status:"On Track",phase:"Development",lever:"Policy and Procedure Refinement",dri:"Katerina Lambropoulos",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-03-31"},
+  {name:"Creation of a new Lookback queue for JP",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Process Re-engineering",dri:"Madhuri Hegde",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Cash SAR General TAP (Holistic TAP)",pillar:"SAR",status:"Not Started",phase:"Initial Assessment",lever:"AI and Automation",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:""},
+  {name:"QC Follow Up Procedure Updates",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-03-31"},
+  {name:"UUP TOSV Notary Migration",pillar:"Triage",status:"Off track",phase:"Eng Resourcing",lever:"Tooling and Workflow",dri:"Alexandra Crocco",volume:"NA",volumeImpact:"No",direction:"none",aht:"Decrease",effectiveness:true,date:""},
+  {name:"KYB Refresh Launch",pillar:"KYC",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Chelsea Waterson",volume:"TBD",volumeImpact:"Yes",direction:"tbd",aht:"TBD",effectiveness:false,date:"2026-07-01"},
+  {name:"SQ Code Red: Customer Exit Optimization for Sustainable Growth",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Process Re-engineering",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"SQ TM procedure update - Escalation of Cash a/c",pillar:"Triage",status:"Not Started",phase:"Not Started",lever:"Policy and Procedure Refinement",dri:"Madhuri Hegde",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Settlement G-06 (Denylisting)",pillar:"Cross Cutting",status:"On Track",phase:"Development",lever:"Policy and Procedure Refinement",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-10-15"},
+  {name:"Narrative Agent/Automation",pillar:"SAR",status:"On Track",phase:"Initial Assessment",lever:"AI and Automation",dri:"Toya Walter",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:"2026-06-30"},
+  {name:"Deactivations Notice Update - UK",pillar:"Triage",status:"On Track",phase:"Development",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Review CO Procedures in accordance with new AU AML Program",pillar:"AfterPay",status:"On Track",phase:"Development",lever:"Policy and Procedure Refinement",dri:"Katerina Lambropoulos",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-06-30"},
+  {name:"Managerbot Product Release",pillar:"Cross Cutting",status:"Not Started",phase:"Not Started",lever:"Product Launch",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-05-29"},
+  {name:"Update TM Adverse Action Guidance for Sub-$2K ML/Money Mule Activity",pillar:"Triage",status:"On Track",phase:"Approvals Pending",lever:"Policy and Procedure Refinement",dri:"Sivan Fraser",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:"2026-04-06"},
+  {name:"Gambling Denylisting Procedure Enhancement",pillar:"Cross Cutting",status:"On Track",phase:"Initial Assessment",lever:"Policy and Procedure Refinement",dri:"Phil Mortillo",volume:"NA",volumeImpact:"No",direction:"none",aht:"NA",effectiveness:false,date:""},
+  {name:"Transition L2 FTE alerts to BPO",pillar:"Sanctions",status:"On Track",phase:"WFM Planning",lever:"Process Re-engineering",dri:"Zander Hilmes",volume:"NA",volumeImpact:"No",direction:"none",aht:"TBD",effectiveness:false,date:"2026-04-27"}
+];
+
+// ── AIRTABLE RECORD ID MAP ────────────────────────────────────────────────────
+const AT_BASE = 'https://airtable.com/appfmmEsdda8cIfyy/tbl3DZrf4jk5UnqgS/viwyyYJbH8CLXkON4';
+const recIdMap = {
+  "CBD Program Deprecation":                             "rec0H7Sz2YmDgcqjU",
+  "Image Repository Requirements":                       "rec0IzrDFqft3C7Mx",
+  "In-App Messaging / IRF":                             "rec0KO8rwwYzOEljJ",
+  "Create CAP Monitoring Procedures":                    "rec196voXvtRK0LG7",
+  "Immaterial Change to SAR Filing DIM":                 "rec2eRRKPYKKVyxZn",
+  "Gambling: Initiator Notes":                           "rec42XsYYYoc2bTc0",
+  "Update UK KYC SOP & EEA KYC Procedures":             "rec4qwdeEm9r8Sue4",
+  "Replace ECDD Email with Google Form & Notary":        "rec7SMRXiqi7Uzqa9",
+  "SQ Code Red: Optimize Customer Exit Criteria":        "rec8wqF9YFxVd7q9J",
+  "SQ TM & UUP - SSP Policy Alignment":                 "recADRwNUdvNJes2B",
+  "NSAR Fincen Guidance Ops Impact Assessment":          "recB9g98uYjsTpyG9",
+  "Gambling M2O Model Launch":                           "recDL6IHg024IXuZX",
+  "AU SMR XML":                                          "recDWcYPBkTpY7Vqb",
+  "Screening Configuration Updates":                     "recELqzOSKdBH7vWz",
+  "Investigate Backlogged & Closed CF1 Cases":           "recFAzWM9XxP0XAjv",
+  "SLA Alignment - UARs (All Regions)":                 "recFB1bapTkhEZNoe",
+  "Autopopulate SAR Form Selections":                    "recH0DhxNoqIVFPth",
+  "Adverse Media Logic Update (Duplicated Alerts)":      "recH2r4uJbAkW57oh",
+  "Double Blind Review Pilot":                           "recH6xwjHPAgDPzNG",
+  "RTB Human Trafficking V1 Model":                      "reco9eF9QW9YdeaHD",
+  "Unusual Activity Referrals":                          "recoBxWYUDaz8oFX4",
+  "Risk Drugs: Big Fish Rule - Drug Trafficking":        "recoFmK08OeiteIoy",
+  "RTB Paper Money Deposits Predicted ML":               "recococ6Lcs4dpLic",
+  "WFP for Sanctions Threshold Change - Afterpay":       "recov5tu8eFSHZiD2",
+  "Afterpay/Clearpay Satori to Notary Migration":        "recovVHAYHS44QJYm",
+  "SQ TM Notary Migration":                             "recpM7WoqFxWxwObQ",
+  "Allocate Resources for Drug TAP Sampling":            "recpxfPYnPWOLGS6F",
+  "Compliance Operations Documentation Standard":        "recqSevnoQBnebGPK",
+  "2026 AU AML/CTF Reforms":                            "recsb3G5937wUOO7N",
+  "Creation of New Lookback Queue for JP":               "recsjiKaKt7AxrkfK",
+  "Cash SAR General TAP (Holistic TAP)":                "rectsEc6N6xpCPXa6",
+  "QC Follow Up Procedure Updates":                     "recu4WexeJmiCGyl6",
+  "UUP TOSV Notary Migration":                          "recuGGE624ce7FhpG",
+  "KYB Refresh Launch":                                 "recuyjERFIsFdWVs3",
+  "SQ TM Procedure Update - Escalation of Cash A/C":    "recw3S0fA9IOEofJp",
+  "Settlement G-06 (Denylisting)":                      "recw9iUMi7MmT6HRD",
+  "Narrative Agent / Automation":                       "recwdo0sfpDZBE92d",
+  "Deactivations Notice Update - UK":                   "recwvrZXM2BnCPU1g",
+  "Review CO Procedures - AU AML Program":              "recxkKoC3UFlMiH3V",
+  "Update TM Adverse Action Guidance (Sub-$2K)":        "recyyuZvSjuZxBm73",
+  "Transition L2 FTE Alerts to BPO":                   "reczw5YlZzurYRj9T"
+};
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+// ── FUZZY SEARCH ─────────────────────────────────────────────────────────────
+// Returns {score, positions} where score>0 means a match.
+// Exact substring scores highest; fuzzy character-sequence matching scores lower
+// but gives bonuses for consecutive chars, word-boundary hits, and proximity to start.
+function fuzzyMatch(query, str){
+  if(!query)return{score:1,positions:[]};
+  const q=query.toLowerCase(), s=str.toLowerCase();
+  // Exact substring — highest priority
+  const exact=s.indexOf(q);
+  if(exact!==-1){
+    return{score:100000-exact,positions:Array.from({length:q.length},(_,k)=>exact+k)};
+  }
+  // Fuzzy: all query chars must appear in order inside str
+  const positions=[];
+  let qi=0,lastPos=-1,score=0;
+  for(let si=0;si<s.length&&qi<q.length;si++){
+    if(s[si]===q[qi]){
+      // Consecutive run bonus
+      score+=(si===lastPos+1)?15:2;
+      // Word-boundary bonus (start of word)
+      if(si===0||/[\s\-:\/]/.test(s[si-1]))score+=8;
+      // Proximity-to-start bonus (decays quickly)
+      score+=Math.max(0,20-si);
+      positions.push(si);
+      lastPos=si;
+      qi++;
+    }
+  }
+  return qi===q.length?{score,positions}:{score:0,positions:[]};
+}
+// Wraps matched character positions with a highlight span
+function fuzzyHighlight(name, positions){
+  if(!positions||!positions.length)return name;
+  const posSet=new Set(positions);
+  return[...name].map((c,i)=>posSet.has(i)
+    ?`<mark style="background:#fef08a;color:#1a1a2e;border-radius:2px;padding:0 1px;font-weight:700">${c}</mark>`
+    :c
+  ).join('');
+}
+
+function nameLink(name, hlPositions){
+  const recId = recIdMap[name];
+  const url = recId ? `${AT_BASE}/${recId}` : AT_BASE;
+  const icon = recId ? '↗' : '🔗';
+  const display = hlPositions&&hlPositions.length ? fuzzyHighlight(name,hlPositions) : name;
+  return `<a href="${url}" target="_blank" rel="noopener noreferrer" title="Open in Airtable" style="color:#ffffff;text-decoration:none;border-bottom:1px dashed #3a4560" onmouseover="this.style.borderBottomColor='#00c853';this.style.color='#00c853'" onmouseout="this.style.borderBottomColor='#3a4560';this.style.color='#e2e8f0'">${display}<span style="font-size:9px;opacity:.35;margin-left:3px">${icon}</span></a>`;
+}
+function pillarClass(p){const m={'KYC':'kyc','Cross Cutting':'crosscutting','Sanctions':'sanctions','Triage':'triage','SAR':'sar','AfterPay':'afterpay','AP/CP':'apcp','ClearPay':'clearpay'};return m[p]||'crosscutting';}
+function statusBadge(s){const m={'On Track':'on-track','Off track':'off-track','At Risk':'at-risk','Not Started':'not-started','Completed':'completed'};return`<span class="badge ${m[s]||'not-started'}">${s}</span>`;}
+function fmtDate(d){if(!d)return'<span style="color:#ccc">—</span>';const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function sortByDate(a,b){if(!a.date&&!b.date)return 0;if(!a.date)return 1;if(!b.date)return-1;return new Date(a.date)-new Date(b.date);}
+function statusOrder(s){return{'On Track':0,'At Risk':1,'Off track':2,'Not Started':3,'Completed':4}[s]??5;}
+function leverShort(l){const m={'Policy and Procedure Refinement':'Policy & Proc.','Process Re-engineering':'Process Re-eng.','Model Optimization':'Model Opt.','AI and Automation':'AI & Auto.','Tooling and Workflow':'Tooling'};return`<span style="background:#1e2a1e;color:#00c853;padding:2px 7px;border-radius:4px;font-weight:600;font-size:11px">${m[l]||l}</span>`}
+// Returns a clean volume display — strips out AHT-only values, shows TBD where real number is missing
+function fmtVol(r){
+  const v=(r.volume||'').trim();
+  const isAHTOnly=v.toLowerCase().includes('min')||v.toLowerCase().includes('aht');
+  const isMissing=!v||v==='NA'||v===''||v==='TBD'||v==='+Vol'||isAHTOnly;
+  if(isMissing)return'<span style="color:#8090b0;font-style:italic">TBD</span>';
+  const color=r.direction==='decreasing'?'#27ae60':r.direction==='increasing'?'#c0392b':'#555';
+  return`<span style="font-weight:700;color:${color}">${v}</span>`;
+}
+
+// ── VOLUME OVERVIEW ──────────────────────────────────────────────────────────
+function renderVolumeOverview(){
+  const withImpact=initiatives.filter(r=>r.volumeImpact==='Yes');
+  const tbd=initiatives.filter(r=>r.direction==='tbd'||(r.volumeImpact==='Yes'&&(!r.volume||r.volume==='TBD')));
+  const inc=initiatives.filter(r=>r.direction==='increasing');
+  const dec=initiatives.filter(r=>r.direction==='decreasing');
+  document.getElementById('volWithImpact').textContent=withImpact.length;
+  document.getElementById('volTBD').textContent=tbd.length;
+  document.getElementById('volIncreasing').textContent=inc.length;
+  document.getElementById('volDecreasing').textContent=dec.length;
+}
+
+// ── VOLUME INCREASING TABLE ──────────────────────────────────────────────────
+function renderVolInc(){
+  const rows=initiatives.filter(r=>r.direction==='increasing');
+  const onTrack=rows.filter(r=>r.status==='On Track').sort(sortByDate);
+  const offTrack=rows.filter(r=>r.status!=='On Track').sort((a,b)=>statusOrder(a.status)-statusOrder(b.status)||sortByDate(a,b));
+  const body=document.getElementById('volIncBody');
+  let html='';
+  if(onTrack.length){html+=`<tr class="group-row"><td colspan="6">✅ On Track (${onTrack.length})</td></tr>`;html+=rowsHTML(onTrack);}
+  if(offTrack.length){html+=`<tr class="group-row"><td colspan="6">⚠ Off Track / At Risk (${offTrack.length})</td></tr>`;html+=rowsHTML(offTrack);}
+  body.innerHTML=html||'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">No volume-increasing initiatives</td></tr>';
+}
+function rowsHTML(rows){
+  return rows.map(r=>`<tr>
+    <td><div class="initiative-name">${nameLink(r.name)}</div></td>
+    <td><span class="pillar-badge pb-${pillarClass(r.pillar)}">${r.pillar}</span></td>
+    <td>${statusBadge(r.status)}</td>
+    <td style="font-size:12px;font-weight:600">${r.dri}</td>
+    <td style="font-size:12px">${fmtVol(r)}</td>
+    <td style="font-size:12px;white-space:nowrap">${fmtDate(r.date)}</td>
+  </tr>`).join('');
+}
+
+// ── EFFECTIVENESS (consolidated: Volume Reducing + AHT Reducing) ─────────────
+function renderEffectiveness(){
+  const volReducing = initiatives.filter(r=>r.direction==='decreasing')
+    .sort((a,b)=>statusOrder(a.status)-statusOrder(b.status)||sortByDate(a,b));
+  const ahtReducing = initiatives.filter(r=>r.aht==='Decrease')
+    .sort((a,b)=>statusOrder(a.status)-statusOrder(b.status)||sortByDate(a,b));
+  const tbd = initiatives.filter(r=>(r.aht==='TBD'||r.volume==='TBD')&&!r.effectiveness);
+
+  document.getElementById('effTBDCount').textContent = tbd.length;
+  document.getElementById('effVolCount').textContent  = volReducing.length;
+  document.getElementById('effAHTCount').textContent  = ahtReducing.length;
+
+  const statusGroups = rows => {
+    let html = '';
+    [['On Track', r=>r.status==='On Track'], ['At Risk', r=>r.status==='At Risk'], ['Off Track', r=>r.status==='Off track'||r.status==='Not Started']]
+      .forEach(([label, fn])=>{
+        const g = rows.filter(fn);
+        if(g.length) html += `<tr class="group-row"><td colspan="5">${label} (${g.length})</td></tr>` +
+          g.map(r=>`<tr>
+            <td><div class="initiative-name">${nameLink(r.name)}</div></td>
+            <td><span class="pillar-badge pb-${pillarClass(r.pillar)}">${r.pillar}</span></td>
+            <td>${statusBadge(r.status)}</td>
+            <td style="font-size:12px;font-weight:700;color:#27ae60">${r.volume||'—'}</td>
+            <td style="font-size:12px">${r.dri}</td>
+          </tr>`).join('');
+      });
+    return html || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px">None identified</td></tr>';
+  };
+
+  document.getElementById('effVolBody').innerHTML = statusGroups(volReducing);
+
+  let ahtHtml = '';
+  [['On Track', r=>r.status==='On Track'], ['At Risk', r=>r.status==='At Risk'], ['Off Track', r=>r.status==='Off track'||r.status==='Not Started']]
+    .forEach(([label, fn])=>{
+      const g = ahtReducing.filter(fn);
+      if(g.length) ahtHtml += `<tr class="group-row"><td colspan="5">${label} (${g.length})</td></tr>` +
+        g.map(r=>`<tr>
+          <td><div class="initiative-name">${nameLink(r.name)}</div></td>
+          <td><span class="pillar-badge pb-${pillarClass(r.pillar)}">${r.pillar}</span></td>
+          <td>${statusBadge(r.status)}</td>
+          <td style="font-size:12px;font-weight:700;color:#2874a6">↓ ${r.volume||'Reduction'}</td>
+          <td style="font-size:12px">${r.dri}</td>
+        </tr>`).join('');
+    });
+  document.getElementById('effAHTBody').innerHTML = ahtHtml || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px">None identified</td></tr>';
+}
+
+// ── LEVER ACCORDION ──────────────────────────────────────────────────────────
+function renderLeverAccordion(){
+  // Returns the clean volume string, or null if missing/AHT-only/TBD
+  function volVal(r){
+    const v=(r.volume||'').trim();
+    const isAHT=v.toLowerCase().includes('min')||v.toLowerCase().includes('aht');
+    if(!v||v==='NA'||v===''||v==='+Vol'||v==='TBD'||isAHT)return null;
+    return v;
+  }
+  // Returns display AHT value for decreasing records (extracts from volume field where stored)
+  function ahtSaving(r){
+    const v=(r.volume||'').trim();
+    if(v&&(v.toLowerCase().includes('min')||v.toLowerCase().includes('aht'))){
+      return v.replace(/\s*AHT\s*/gi,'').trim();
+    }
+    return 'Saving TBD';
+  }
+  // One row in the rollup panels
+  function rollupRow(r,valueHTML){
+    return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #2a2a2a;gap:8px">
+      <div style="font-size:12px;color:#f0f4ff;flex:1;line-height:1.35">${nameLink(r.name)}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">${valueHTML}${statusBadge(r.status)}</div>
+    </div>`;
+  }
+
+  const levers=[
+    {name:'Policy and Procedure Refinement',icon:'📋',resourcing:'Primarily analyst capacity for documentation & review'},
+    {name:'Process Re-engineering',         icon:'🔄',resourcing:'Cross-functional ops & program alignment required'},
+    {name:'Model Optimization',             icon:'🧠',resourcing:'WFM planning for incremental alert volume & sampling'},
+    {name:'AI and Automation',              icon:'🤖',resourcing:'Engineering resourcing + UAT; potential AHT reduction long-term'},
+    {name:'Tooling and Workflow',           icon:'🛠',resourcing:'Tool migration support; expected AHT reduction post-go-live'}
+  ];
+
+  document.getElementById('leverAccordion').innerHTML=levers.map((lev,i)=>{
+    const rows=initiatives.filter(r=>r.lever===lev.name);
+    const volRows=rows.filter(r=>r.volumeImpact==='Yes');
+    const volConfirmed=volRows.filter(r=>volVal(r)!==null);
+    const volTBD=volRows.filter(r=>volVal(r)===null);
+    const ahtIncRows=rows.filter(r=>r.aht==='Increase');
+    const ahtDecRows=rows.filter(r=>r.aht==='Decrease');
+    const onT=rows.filter(r=>r.status==='On Track').length;
+    const offT=rows.filter(r=>r.status==='Off track'||r.status==='At Risk').length;
+
+    // ── VOLUME ROLLUP PANEL ──
+    let volHTML='';
+    if(!volRows.length){
+      volHTML='<p style="font-size:12px;color:#7080a0;font-style:italic;margin:4px 0">No volume impact initiatives under this lever</p>';
+    } else {
+      if(volConfirmed.length){
+        volHTML+=`<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Confirmed Volumes (${volConfirmed.length})</div>`;
+        volHTML+=volConfirmed.map(r=>{
+          const col=r.direction==='decreasing'?'#27ae60':r.direction==='increasing'?'#c0392b':'#555';
+          return rollupRow(r,`<span style="font-size:12px;font-weight:700;color:${col};white-space:nowrap">${volVal(r)}</span>`);
+        }).join('');
+      }
+      if(volTBD.length){
+        if(volConfirmed.length)volHTML+='<div style="height:10px"></div>';
+        volHTML+=`<div style="font-size:10px;font-weight:700;color:#d35400;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Volume TBD (${volTBD.length})</div>`;
+        volHTML+=`<div style="background:#1e1200;border:1px solid #3a2500;border-radius:6px;padding:8px 10px">`;
+        volHTML+=volTBD.map(r=>rollupRow(r,`<span style="font-size:11px;font-weight:600;color:#d35400;white-space:nowrap">TBD</span>`)).join('');
+        volHTML+=`</div>`;
+      }
+    }
+
+    // ── AHT ROLLUP PANEL ──
+    let ahtHTML='';
+    if(!ahtIncRows.length&&!ahtDecRows.length){
+      ahtHTML='<p style="font-size:12px;color:#7080a0;font-style:italic;margin:4px 0">No AHT impact identified under this lever</p>';
+    } else {
+      if(ahtIncRows.length){
+        ahtHTML+=`<div style="font-size:10px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Increasing Handle Time (${ahtIncRows.length})</div>`;
+        ahtHTML+=ahtIncRows.map(r=>rollupRow(r,'<span style="font-size:12px;font-weight:700;color:#c0392b;white-space:nowrap">↑ Increasing</span>')).join('');
+      }
+      if(ahtDecRows.length){
+        if(ahtIncRows.length)ahtHTML+='<div style="height:10px"></div>';
+        ahtHTML+=`<div style="font-size:10px;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Saving Handle Time (${ahtDecRows.length})</div>`;
+        ahtHTML+=ahtDecRows.map(r=>rollupRow(r,`<span style="font-size:12px;font-weight:700;color:#27ae60;white-space:nowrap">↓ ${ahtSaving(r)}</span>`)).join('');
+      }
+    }
+
+    return`<div class="lever-block">
+      <div class="lever-header" onclick="toggleLever('lev${i}')">
+        <div class="lever-left">
+          <span style="font-size:20px">${lev.icon}</span>
+          <div>
+            <div class="lever-title">${lev.name}</div>
+            <div class="lever-sub">${rows.length} initiatives · ${lev.resourcing}</div>
+          </div>
+        </div>
+        <div class="lever-chips">
+          <span class="lchip vol">Vol Impact: ${volRows.length}${volTBD.length?` (${volTBD.length} TBD)`:''}</span>
+          ${ahtIncRows.length?`<span class="lchip aht">AHT Increasing: ${ahtIncRows.length}</span>`:''}
+          ${ahtDecRows.length?`<span class="lchip" style="background:#d4edda;color:#155724">AHT Saving: ${ahtDecRows.length}</span>`:''}
+          <span class="lchip ok">On Track: ${onT}</span>
+          ${offT?`<span class="lchip warn">Off Track / At Risk: ${offT}</span>`:''}
+          <span class="lever-arrow" id="lev${i}arr">▸</span>
+        </div>
+      </div>
+      <div id="lev${i}" class="lever-body">
+
+        <!-- ── VOLUME & AHT ROLLUP SUMMARY ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #2d3650">
+          <div style="padding:18px 20px;border-right:1px solid #2d3650">
+            <div style="font-size:13px;font-weight:700;color:#ffffff;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              📊 Volume Rollup
+              <span style="font-size:11px;font-weight:400;color:#8090b0">${volConfirmed.length} confirmed · ${volTBD.length} TBD</span>
+            </div>
+            ${volHTML}
+          </div>
+          <div style="padding:18px 20px">
+            <div style="font-size:13px;font-weight:700;color:#ffffff;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              ⏱ AHT Rollup
+              <span style="font-size:11px;font-weight:400;color:#8090b0">${ahtIncRows.length} increasing · ${ahtDecRows.length} decreasing</span>
+            </div>
+            ${ahtHTML}
+          </div>
+        </div>
+
+        <!-- ── FULL INITIATIVE TABLE ── -->
+        <div style="padding:4px 0">
+          <table>
+            <thead><tr><th>Initiative</th><th>Pillar</th><th>Status</th><th>DRI</th><th>Vol Impact</th><th>Volume</th><th>AHT</th><th>Phase</th></tr></thead>
+            <tbody>${rows.sort((a,b)=>statusOrder(a.status)-statusOrder(b.status)).map(r=>`<tr>
+              <td><div class="initiative-name">${nameLink(r.name)}</div></td>
+              <td><span class="pillar-badge pb-${pillarClass(r.pillar)}">${r.pillar}</span></td>
+              <td>${statusBadge(r.status)}</td>
+              <td style="font-size:12px;font-weight:600">${r.dri}</td>
+              <td>${r.volumeImpact==='Yes'?'<span style="color:#c0392b;font-weight:700">Yes</span>':'<span style="color:#aaa">No</span>'}</td>
+              <td style="font-size:12px;color:${r.direction==='increasing'?'#c0392b':r.direction==='decreasing'?'#27ae60':'#888'};font-weight:600">${r.volume&&r.volume!=='NA'?r.volume:'—'}</td>
+              <td style="font-size:12px">${r.aht==='Increase'?'<span style="color:#c0392b;font-weight:700">Increasing</span>':r.aht==='Decrease'?'<span style="color:#27ae60;font-weight:700">Decreasing</span>':r.aht==='TBD'?'<span style="color:#d35400">TBD</span>':'<span style="color:#aaa">No Impact</span>'}</td>
+              <td style="font-size:12px;color:#ffffff;font-weight:500">${r.phase}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleLever(id){
+  const el=document.getElementById(id),arr=document.getElementById(id+'arr'),open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  arr.style.transform=open?'':'rotate(90deg)';arr.textContent=open?'▸':'▾';
+}
+
+// ── PHASE CHART (ordered as specified) ──────────────────────────────────────
+function renderPhaseChart(){
+  const phases=[
+    {name:'Not Started',count:10,color:'#95a5a6'},
+    {name:'Initial Assessment',count:27,color:'#3498db'},
+    {name:'Approvals Pending',count:4,color:'#f39c12'},
+    {name:'Awaiting Guidance',count:3,color:'#e74c3c'},
+    {name:'Development',count:6,color:'#27ae60'},
+    {name:'WFM Planning',count:18,color:'#8e44ad'},
+    {name:'Eng Resourcing',count:5,color:'#e67e22'},
+    {name:'Completed',count:3,color:'#2ecc71'}
+  ];
+  const max=27;
+  document.getElementById('phaseChart').innerHTML=phases.map(p=>`
+    <div class="phase-row">
+      <div class="phase-label">${p.name}</div>
+      <div class="phase-num" style="color:${p.color}">${p.count}</div>
+      <div class="phase-track"><div class="phase-fill" style="width:${Math.round(p.count/max*100)}%;background:${p.color}">${p.count>4?p.count:''}</div></div>
+    </div>`).join('');
+}
+
+// ── DRI GRID ────────────────────────────────────────────────────────────────
+function renderDRI(){
+  const dris=[
+    {name:'Toya Walter',count:19,initials:'TW',color:'#c0392b'},
+    {name:'Madhuri Hegde',count:9,initials:'MH',color:'#8e44ad'},
+    {name:'Zander Hilmes',count:9,initials:'ZH',color:'#d35400'},
+    {name:'Katerina Lambropoulos',count:8,initials:'KL',color:'#6610f2'},
+    {name:'Sivan Fraser',count:7,initials:'SF',color:'#2874a6'},
+    {name:'Chelsea Waterson',count:6,initials:'CW',color:'#117a65'},
+    {name:'Phil Mortillo',count:6,initials:'PM',color:'#1a1a2e'},
+    {name:'Alexandra Crocco',count:5,initials:'AC',color:'#0d6efd'},
+    {name:'Ryan Sierra',count:4,initials:'RS',color:'#e67e22'},
+    {name:'Rameez Siddiqi',count:2,initials:'RS',color:'#7f8c8d'}
+  ];
+  document.getElementById('driGrid').innerHTML=dris.map(d=>`
+    <div class="dri-card" onclick="filterByDRI('${d.name}')">
+      <div class="dri-avatar" style="background:${d.color}">${d.initials}</div>
+      <div><div class="dri-name">${d.name}</div><div class="dri-count">${d.count} initiatives — click to filter</div></div>
+    </div>`).join('');
+}
+
+// ── UPCOMING ────────────────────────────────────────────────────────────────
+function renderUpcoming(){
+  const today=new Date('2026-04-16');
+  const colors=['#3498db','#8e44ad','#27ae60','#e67e22','#c0392b','#0d6efd','#117a65','#d35400','#2874a6'];
+  const rows=initiatives.filter(r=>r.date&&new Date(r.date+'T12:00:00')>=today).sort(sortByDate).slice(0,9);
+  document.getElementById('upcomingGrid').innerHTML=rows.map((r,i)=>`
+    <div class="upcoming-card" style="border-left-color:${colors[i%colors.length]}">
+      <div class="upcoming-date" style="color:${colors[i%colors.length]}">${fmtDate(r.date)}</div>
+      <div class="upcoming-name">${r.name}</div>
+      <div class="upcoming-meta">${statusBadge(r.status)}<span>DRI: ${r.dri}</span></div>
+    </div>`).join('');
+}
+
+// ── MAIN TABLE ───────────────────────────────────────────────────────────────
+function renderTable(data){
+  const countEl=document.getElementById('filterCount');
+  countEl.textContent=`Showing ${data.length} of ${initiatives.length}`;
+  document.getElementById('initiativesBody').innerHTML=data.length
+    ? data.map(r=>`<tr>
+        <td><div class="initiative-name">${nameLink(r.name,r._hl)}</div></td>
+        <td><span class="pillar-badge pb-${pillarClass(r.pillar)}">${r.pillar}</span></td>
+        <td>${statusBadge(r.status)}</td>
+        <td style="font-size:12px;color:#ffffff;font-weight:500">${r.phase}</td>
+        <td style="font-size:11px">${leverShort(r.lever)}</td>
+        <td style="font-size:12px;font-weight:600">${r.dri||'—'}</td>
+        <td>${r.volumeImpact==='Yes'?'<span style="color:#c0392b;font-weight:700">⚠ Yes</span>':'<span style="color:#aaa;font-size:12px">No</span>'}</td>
+        <td style="font-size:12px">${fmtVol(r)}</td>
+        <td style="font-size:12px">${r.aht==='Increase'?'<span style="color:#c0392b">↑</span>':r.aht==='Decrease'?'<span style="color:#27ae60">↓</span>':r.aht||'—'}</td>
+        <td style="font-size:12px;white-space:nowrap">${fmtDate(r.date)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px">No initiatives match your filters.</td></tr>';
+}
+// ── TOP SEARCH SYNC ──────────────────────────────────────────────────────────
+function syncTopSearch(){
+  const v=document.getElementById('topSearch').value;
+  document.getElementById('searchInput').value=v;
+  document.getElementById('topClearBtn').style.display=v?'inline-block':'none';
+  hideBanner();
+  applyFilters();
+  if(v) document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+function clearTopSearch(){
+  document.getElementById('topSearch').value='';
+  document.getElementById('searchInput').value='';
+  document.getElementById('topClearBtn').style.display='none';
+  document.getElementById('topSearch').style.borderColor='#e0e0e0';
+  document.getElementById('topSearch').style.background='#fafafa';
+  applyFilters();
+}
+
+// ── EFFECTIVENESS TBD FILTER ─────────────────────────────────────────────────
+function filterEffectivenessTBD(){
+  // Clear all standard filters
+  ['filterStatus','filterPillar','filterDRI','filterLever','filterPhase'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('searchInput').value='';
+  document.getElementById('topSearch').value='';
+  document.getElementById('topClearBtn').style.display='none';
+  // Compute TBD set (same logic as renderEffectiveness)
+  const tbd=initiatives.filter(r=>(r.aht==='TBD'||r.volume==='TBD')&&!r.effectiveness);
+  renderTable(tbd.map(r=>({...r,_hl:[]})));
+  showBanner(`⚠ Showing ${tbd.length} initiatives with TBD effectiveness data — volume or AHT impact not yet quantified`);
+  document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+
+function showBanner(msg){
+  const b=document.getElementById('activeBanner');
+  document.getElementById('activeBannerText').textContent=msg;
+  b.style.display='flex';
+}
+function hideBanner(){
+  document.getElementById('activeBanner').style.display='none';
+}
+
+function applyFilters(){
+  const s=document.getElementById('filterStatus').value;
+  const p=document.getElementById('filterPillar').value;
+  const d=document.getElementById('filterDRI').value;
+  const l=document.getElementById('filterLever').value;
+  const ph=document.getElementById('filterPhase').value;
+  const q=document.getElementById('searchInput').value.trim();
+  const searchBox=document.getElementById('searchInput');
+
+  hideBanner();
+
+  // Base filter (dropdowns)
+  let filtered=initiatives.filter(r=>
+    (!s||r.status===s)&&(!p||r.pillar===p)&&(!d||r.dri===d)&&(!l||r.lever===l)&&(!ph||r.phase===ph)
+  );
+
+  if(q){
+    // Fuzzy match against name (primary) and DRI (secondary)
+    filtered=filtered
+      .map(r=>{
+        const nm=fuzzyMatch(q,r.name);
+        const dm=fuzzyMatch(q,r.dri);
+        const score=Math.max(nm.score,dm.score);
+        const pos=nm.score>=dm.score?nm.positions:[];
+        return{...r,_hl:pos,_score:score};
+      })
+      .filter(x=>x._score>0)
+      .sort((a,b)=>b._score-a._score);
+    // Fuzzy-active styling on both search inputs
+    [searchBox,document.getElementById('topSearch')].forEach(el=>{if(el){el.style.borderColor='#00c853';el.style.background='#1a2216';}});
+  } else {
+    [searchBox,document.getElementById('topSearch')].forEach(el=>{if(el){el.style.borderColor='';el.style.background='';}});
+    filtered=filtered.map(r=>({...r,_hl:[]}));
+  }
+
+  renderTable(filtered);
+}
+function clearFilters(){
+  ['filterStatus','filterPillar','filterDRI','filterLever','filterPhase'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('searchInput').value='';
+  const ts=document.getElementById('topSearch');if(ts)ts.value='';
+  const cb=document.getElementById('topClearBtn');if(cb)cb.style.display='none';
+  hideBanner();
+  applyFilters();
+  document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+function filterTo(status){
+  clearFilters();
+  document.getElementById('filterStatus').value=status;
+  applyFilters();
+  document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+function filterByPillar(p){document.getElementById('filterPillar').value=p;applyFilters();document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});}
+function filterByDRI(d){document.getElementById('filterDRI').value=d;applyFilters();document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});}
+
+// ── DRI MISSING / TBD FIELDS ─────────────────────────────────────────────────
+// Returns array of missing field keys for an initiative
+function getMissingFields(r){
+  const missing=[];
+  // Volume: flagged if volumeImpact=Yes but volume is TBD, empty, NA, +Vol, or AHT-only
+  if(r.volumeImpact==='Yes'){
+    const v=(r.volume||'').trim();
+    const isAHTOnly=v.toLowerCase().includes('min')||v.toLowerCase().includes('aht');
+    if(!v||v==='NA'||v==='TBD'||v==='+Vol'||isAHTOnly)missing.push('volume');
+  }
+  // AHT: any TBD value counts as missing
+  if(r.aht==='TBD')missing.push('aht');
+  // Implementation date: missing for active initiatives (not Not Started, not Completed)
+  if(!r.date&&r.phase!=='Not Started'&&r.phase!=='Completed')missing.push('date');
+  return missing;
+}
+
+function toggleDriMiss(id){
+  const el=document.getElementById(id),arr=document.getElementById(id+'arr');
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  arr.textContent=open?'▸':'▾';
+}
+
+function renderMissingByDRI(){
+  // Map of DRI → initiatives with missing fields
+  const byDRI={};
+  initiatives.forEach(r=>{
+    const fields=getMissingFields(r);
+    if(!fields.length)return;
+    if(!byDRI[r.dri])byDRI[r.dri]={dri:r.dri,items:[]};
+    byDRI[r.dri].items.push({r,fields});
+  });
+
+  // Sort DRIs by number of affected initiatives (most first)
+  const driList=Object.values(byDRI).sort((a,b)=>b.items.length-a.items.length);
+
+  const driColors={
+    'Toya Walter':'#c0392b','Madhuri Hegde':'#8e44ad','Zander Hilmes':'#d35400',
+    'Katerina Lambropoulos':'#6610f2','Sivan Fraser':'#2874a6','Chelsea Waterson':'#117a65',
+    'Phil Mortillo':'#3a6186','Alexandra Crocco':'#0d6efd','Ryan Sierra':'#e67e22',
+    'Rameez Siddiqi':'#7f8c8d','Andrew kane':'#95a5a6','Subhi Sabeiha':'#16a085'
+  };
+  const initials=n=>{const parts=n.split(' ');return(parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();};
+
+  const totalAffected=driList.reduce((a,d)=>a+d.items.length,0);
+  document.getElementById('driMissingSubtitle').textContent=`${totalAffected} initiatives across ${driList.length} DRIs`;
+
+  const fieldChip=(f)=>{
+    if(f==='volume')return`<span class="mchip vol">Volume TBD</span>`;
+    if(f==='aht')return`<span class="mchip aht">AHT TBD</span>`;
+    if(f==='date')return`<span class="mchip date">No Impl. Date</span>`;
+    return'';
+  };
+
+  if(!driList.length){
+    document.getElementById('driMissingGrid').innerHTML=
+      `<div style="text-align:center;padding:32px;color:#00c853;font-size:14px;font-weight:600">✓ All initiatives have complete data — nothing missing!</div>`;
+    return;
+  }
+
+  document.getElementById('driMissingGrid').innerHTML=driList.map((d,i)=>{
+    const color=driColors[d.dri]||'#3a4560';
+    const ini=initials(d.dri);
+    const bodyId=`dmiss_${i}`;
+    const rows=d.items.map(({r,fields})=>`
+      <div class="miss-row">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;line-height:1.35">${nameLink(r.name)}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap">
+            ${fields.map(fieldChip).join('')}
+            <span style="font-size:10px;color:#7080a0;margin-left:2px">${r.pillar} · ${r.phase}</span>
+          </div>
+        </div>
+        <div style="flex-shrink:0;margin-left:8px">${statusBadge(r.status)}</div>
+      </div>`).join('');
+
+    const volCount=d.items.filter(x=>x.fields.includes('volume')).length;
+    const ahtCount=d.items.filter(x=>x.fields.includes('aht')).length;
+    const dateCount=d.items.filter(x=>x.fields.includes('date')).length;
+    const summaryChips=[
+      volCount?`<span class="mchip vol">${volCount} Vol</span>`:'',
+      ahtCount?`<span class="mchip aht">${ahtCount} AHT</span>`:'',
+      dateCount?`<span class="mchip date">${dateCount} Date</span>`:''
+    ].filter(Boolean).join('');
+
+    return`<div class="dri-miss-card">
+      <div class="dri-miss-hdr" onclick="toggleDriMiss('${bodyId}')">
+        <div class="dri-miss-avatar" style="background:${color}">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;color:#ffffff">${d.dri}</div>
+          <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">${summaryChips}</div>
+        </div>
+        <div class="dri-miss-count">${d.items.length} initiative${d.items.length>1?'s':''} need action</div>
+        <div id="${bodyId}arr" style="font-size:16px;color:#8090b0;margin-left:12px;transition:transform .2s">▸</div>
+      </div>
+      <div class="dri-miss-body" id="${bodyId}">
+        ${rows}
+        <div style="padding:10px 18px 2px">
+          <a href="${AT_BASE}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:#00c853;text-decoration:none;opacity:.8" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">→ Open Airtable to update fields ↗</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderVolumeOverview();
+renderVolInc();
+renderEffectiveness();
+renderLeverAccordion();
+renderPhaseChart();
+renderDRI();
+renderUpcoming();
+renderTable(initiatives);
+renderMissingByDRI();
+</script>
 </body>
 </html>
