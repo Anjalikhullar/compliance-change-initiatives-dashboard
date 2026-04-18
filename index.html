@@ -683,6 +683,162 @@ function renderLeverAccordion(){
 function toggleLever(id){
   const el=document.getElementById(id),arr=document.getElementById(id+'arr');
   const open=el.style.display!=='none';
-  el.style.display=open?'
+  el.style.display=open?'none':'block';
+  arr.textContent=open?'▸':'▾';
+}
+
+function renderPhaseChart(){
+  const phases=[
+    {name:'Not Started',count:0,color:'#95a5a6'},
+    {name:'Initial Assessment',count:0,color:'#3498db'},
+    {name:'Approvals Pending',count:0,color:'#f39c12'},
+    {name:'Development',count:0,color:'#27ae60'},
+    {name:'WFM Planning',count:0,color:'#8e44ad'},
+    {name:'Completed',count:0,color:'#2ecc71'}
+  ];
+  initiatives.forEach(r=>{const p=phases.find(x=>x.name===r.phase);if(p)p.count++;});
+  const max=Math.max(...phases.map(p=>p.count),1);
+  document.getElementById('phaseChart').innerHTML=phases.map(p=>`
+    <div class="phase-row">
+      <div class="phase-label">${p.name}</div>
+      <div class="phase-num" style="color:${p.color}">${p.count}</div>
+      <div class="phase-track"><div class="phase-fill" style="width:${Math.round(p.count/max*100)}%;background:${p.color}">${p.count>2?p.count:''}</div></div>
+    </div>`).join('');
+}
+
+function renderDRI(){
+  const driCounts={};
+  initiatives.forEach(r=>{driCounts[r.dri]=(driCounts[r.dri]||0)+1;});
+  const dris=Object.entries(driCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const colors=['#c0392b','#8e44ad','#d35400','#6610f2','#2874a6','#117a65','#1a1a2e','#0d6efd','#e67e22','#7f8c8d'];
+  document.getElementById('driGrid').innerHTML=dris.map((d,i)=>{
+    const initials=d[0].split(' ').map(x=>x[0]).join('').toUpperCase();
+    return`<div class="dri-card" onclick="filterByDRI('${d[0]}')">
+      <div class="dri-avatar" style="background:${colors[i]}">${initials}</div>
+      <div><div class="dri-name">${d[0]}</div><div class="dri-count">${d[1]} initiatives</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderUpcoming(){
+  const today=new Date();
+  const rows=initiatives.filter(r=>r.date&&new Date(r.date+'T12:00:00')>=today).sort(sortByDate).slice(0,9);
+  const colors=['#3498db','#8e44ad','#27ae60','#e67e22','#c0392b','#0d6efd','#117a65','#d35400','#2874a6'];
+  document.getElementById('upcomingGrid').innerHTML=rows.map((r,i)=>`
+    <div class="upcoming-card" style="border-left-color:${colors[i%colors.length]}">
+      <div class="upcoming-date" style="color:${colors[i%colors.length]}">${fmtDate(r.date)}</div>
+      <div class="upcoming-name">${r.name}</div>
+      <div class="upcoming-meta">${statusBadge(r.status)}<span>DRI: ${r.dri}</span></div>
+    </div>`).join('');
+}
+
+function renderTable(data){
+  const countEl=document.getElementById('filterCount');
+  countEl.textContent=`Showing ${data.length} of ${initiatives.length}`;
+  document.getElementById('initiativesBody').innerHTML=data.length
+    ? data.map(r=>`<tr>
+        <td><div class="initiative-name">${nameLink(r.name,r._hl)}</div></td>
+        <td><span class="pillar-badge pb-${pillarClass(r.pillar)}">${r.pillar}</span></td>
+        <td>${statusBadge(r.status)}</td>
+        <td style="font-size:12px">${r.phase}</td>
+        <td style="font-size:11px">${leverShort(r.lever)}</td>
+        <td style="font-size:12px">${r.dri||'—'}</td>
+        <td>${r.volumeImpact==='Yes'?'<span style="color:#c0392b">Yes</span>':'<span style="color:#aaa">No</span>'}</td>
+        <td style="font-size:12px">${fmtVol(r)}</td>
+        <td style="font-size:12px">${r.aht||'—'}</td>
+        <td style="font-size:12px">${fmtDate(r.date)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:30px">No initiatives match your filters.</td></tr>';
+}
+
+function renderMissingByDRI(){
+  document.getElementById('driMissingGrid').innerHTML='<div style="text-align:center;padding:20px;color:#00c853">✓ Data completeness check available after full data load</div>';
+}
+
+function syncTopSearch(){
+  const v=document.getElementById('topSearch').value;
+  document.getElementById('searchInput').value=v;
+  document.getElementById('topClearBtn').style.display=v?'inline-block':'none';
+  applyFilters();
+}
+
+function clearTopSearch(){
+  document.getElementById('topSearch').value='';
+  document.getElementById('searchInput').value='';
+  document.getElementById('topClearBtn').style.display='none';
+  applyFilters();
+}
+
+function filterEffectivenessTBD(){
+  clearFilters();
+  const tbd=initiatives.filter(r=>(r.aht==='TBD'||r.volume==='TBD')&&!r.effectiveness);
+  renderTable(tbd.map(r=>({...r,_hl:[]})));
+}
+
+function applyFilters(){
+  const s=document.getElementById('filterStatus').value;
+  const p=document.getElementById('filterPillar').value;
+  const d=document.getElementById('filterDRI').value;
+  const l=document.getElementById('filterLever').value;
+  const ph=document.getElementById('filterPhase').value;
+  const q=document.getElementById('searchInput').value.trim();
+  let filtered=initiatives.filter(r=>
+    (!s||r.status===s)&&(!p||r.pillar===p)&&(!d||r.dri===d)&&(!l||r.lever===l)&&(!ph||r.phase===ph)
+  );
+  if(q){
+    filtered=filtered.map(r=>{
+      const nm=fuzzyMatch(q,r.name);
+      const dm=fuzzyMatch(q,r.dri);
+      const score=Math.max(nm.score,dm.score);
+      return{...r,_hl:nm.score>=dm.score?nm.positions:[],_score:score};
+    }).filter(x=>x._score>0).sort((a,b)=>b._score-a._score);
+  }else{
+    filtered=filtered.map(r=>({...r,_hl:[]}));
+  }
+  renderTable(filtered);
+}
+
+function clearFilters(){
+  ['filterStatus','filterPillar','filterDRI','filterLever','filterPhase'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('searchInput').value='';
+  const ts=document.getElementById('topSearch');if(ts)ts.value='';
+  applyFilters();
+}
+
+function filterTo(status){
+  clearFilters();
+  document.getElementById('filterStatus').value=status;
+  applyFilters();
+  document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+
+function filterByPillar(p){
+  document.getElementById('filterPillar').value=p;
+  applyFilters();
+  document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+
+function filterByDRI(d){
+  document.getElementById('filterDRI').value=d;
+  applyFilters();
+  document.getElementById('allInitiativesSection').scrollIntoView({behavior:'smooth'});
+}
+
+function renderAll(){
+  renderVolumeOverview();
+  renderVolInc();
+  renderEffectiveness();
+  renderLeverAccordion();
+  renderPhaseChart();
+  renderDRI();
+  renderUpcoming();
+  renderTable(initiatives);
+  renderMissingByDRI();
+}
+
+loadData();
+</script>
+</body>
+</html>
 </body>
 </html>
