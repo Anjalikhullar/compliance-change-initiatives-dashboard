@@ -512,17 +512,30 @@ async function loadData() {
       else if (vol === 'tbd' || vol === 'na' || vol === '' || vol === 'n/a') {
         direction = 'tbd';
       }
-      // If it has numbers but no clear indicator, check for context clues
-      else if (/\d/.test(vol)) {
-        // Has numbers - try to infer from context
-        if (vol.includes('cases') || vol.includes('txns') || vol.includes('volume')) {
-          // Default to increasing if it has volume numbers but no sign
-          direction = 'increasing';
-        }
-      }
       
       // Determine if it's an effectiveness initiative
       const ahtVal = (f['AHT (=,-,+, TBD or NA)'] || '').toString().trim();
+      const effectiveness = direction === 'decreasing' || ahtVal === '-';
+      
+      // Parse Volume Impact (handle array format from Airtable)
+      const volumeImpactRaw = f['Volume Impact '];
+      const volumeImpact = Array.isArray(volumeImpactRaw) ? volumeImpactRaw[0] : (volumeImpactRaw || 'No');
+      
+      return {
+        name: f['Initiative Name '] || 'Unnamed Initiative',
+        pillar: f['Program Pillar'] || 'Unknown',
+        status: f['Status '] || 'Not Started',
+        phase: f['Phase '] || 'Not Started',
+        lever: f['Levers'] || 'Unknown',
+        dri: f['DRI '] || 'Unassigned',
+        volume: f['Volume  (in numbers with - or +)'] || 'NA',
+        volumeImpact: volumeImpact,
+        direction: direction,
+        aht: ahtVal || 'NA',
+        effectiveness: effectiveness,
+        date: f['Implementation Date '] || ''
+      };
+    });
       const effectiveness = direction === 'decreasing' || ahtVal === '-';
       
       return {
