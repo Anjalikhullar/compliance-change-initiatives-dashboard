@@ -503,7 +503,7 @@ async function loadData() {
       else if (vol.toLowerCase() === 'tbd') direction = 'tbd';
       
       // Determine if it's an effectiveness initiative
-      const ahtVal = (f['AHT'] || '').toString().trim();
+      const ahtVal = (f['AHT (=,-,+, TBD or NA)  '] || '').toString().trim();
       const effectiveness = direction === 'decreasing' || ahtVal === '-';
       
       return {
