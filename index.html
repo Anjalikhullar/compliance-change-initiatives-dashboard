@@ -496,15 +496,33 @@ async function loadData() {
     initiatives = data.records.map(record => {
       const f = record.fields;
       
-      // Determine direction based on Volume field
+      // Determine direction based on Volume field - flexible matching
       let direction = 'none';
-      const vol = (f['Volume  (in numbers with - or +)'] || '').toString().trim();
-      if (vol.startsWith('-')) direction = 'decreasing';
-      else if (vol.startsWith('+')) direction = 'increasing';
-      else if (vol.toLowerCase() === 'tbd') direction = 'tbd';
+      const vol = (f['Volume  (in numbers with - or +)'] || '').toString().trim().toLowerCase();
+      
+      // Check for decreasing indicators
+      if (vol.startsWith('-') || vol.includes('decrease') || vol.includes('reduction') || vol.includes('down')) {
+        direction = 'decreasing';
+      }
+      // Check for increasing indicators  
+      else if (vol.startsWith('+') || vol.includes('increase') || vol.includes('up') || vol.includes('uup')) {
+        direction = 'increasing';
+      }
+      // Check for TBD/missing
+      else if (vol === 'tbd' || vol === 'na' || vol === '' || vol === 'n/a') {
+        direction = 'tbd';
+      }
+      // If it has numbers but no clear indicator, check for context clues
+      else if (/\d/.test(vol)) {
+        // Has numbers - try to infer from context
+        if (vol.includes('cases') || vol.includes('txns') || vol.includes('volume')) {
+          // Default to increasing if it has volume numbers but no sign
+          direction = 'increasing';
+        }
+      }
       
       // Determine if it's an effectiveness initiative
-      const ahtVal = (f['AHT'] || '').toString().trim();
+      const ahtVal = (f['AHT (=,-,+, TBD or NA)'] || '').toString().trim();
       const effectiveness = direction === 'decreasing' || ahtVal === '-';
       
       return {
