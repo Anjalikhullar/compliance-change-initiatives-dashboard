@@ -1,3 +1,4 @@
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -497,7 +498,7 @@ async function loadData() {
       
       // Determine direction based on Volume field
       let direction = 'none';
-      const vol = (f['Volume (in numbers with - or +) '] || '').toString().trim();
+      const vol = (f['Volume  (in numbers with - or +)'] || '').toString().trim();
       if (vol.startsWith('-')) direction = 'decreasing';
       else if (vol.startsWith('+')) direction = 'increasing';
       else if (vol.toLowerCase() === 'tbd') direction = 'tbd';
@@ -508,12 +509,12 @@ async function loadData() {
       
       return {
         name: f['Initiative Name '] || 'Unnamed Initiative',
-        pillar: f['Program Pillar '] || 'Unknown',
+        pillar: f['Program Pillar'] || 'Unknown',
         status: f['Status '] || 'Not Started',
         phase: f['Phase '] || 'Not Started',
-        lever: f['Levers '] || 'Unknown',
+        lever: f['Levers'] || 'Unknown',
         dri: f['DRI '] || 'Unassigned',
-        volume: f['Volume (in numbers with - or +) '] || 'NA',
+        volume: f['Volume  (in numbers with - or +)'] || 'NA',
         volumeImpact: f['Volume Impact '] || 'No',
         direction: direction,
         aht: ahtVal || 'NA',
