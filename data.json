@@ -1,1 +1,1 @@
-{error: "406: blocked. If you believe you received this page in error, please visit https://support.airtable.com/v1/docs/api-common-troubleshooting or contact support@airtable.com"}
+{"error":{"type":"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND","message":"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct."}}
